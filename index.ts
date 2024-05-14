@@ -22,7 +22,7 @@ if (!PRIVATE_KEY) {
 const pimlicoEndpoint = `https://api.pimlico.io/v2/arbitrum/rpc?apikey=${API_KEY}`;
 
 export const publicClient = createPublicClient({
-	transport: http("https://rpc.ankr.com/arbitrum/a20ac6cccdd51cea4bb5908e2049298665590464e9b2fe9e56098942c735390d"),
+	transport: http("https://rpc.ankr.com/arbitrum/"),
 })
  
 export const paymasterClient = createPimlicoPaymasterClient({
@@ -41,7 +41,7 @@ console.log('Signer:', signer.address)
 
 const walletClient = createWalletClient({
     account: signer,
-    transport: http("https://rpc.ankr.com/arbitrum/a20ac6cccdd51cea4bb5908e2049298665590464e9b2fe9e56098942c735390d"),
+    transport: http("https://rpc.ankr.com/arbitrum/"),
     chain: arbitrum,
 })
 
@@ -58,11 +58,11 @@ console.log('Safe Account:', safeAccount.address)
 const depositTx = await walletClient.sendTransaction({
     to: safeAccount.address,
     value: parseEther("0.00001"), // amount to deposit
-    // data: encodeFunctionData({
-    //     abi: neethAbi,
-    //     functionName: 'depositTo',
-    //     args: [safeAccount.address],
-    // })
+    data: encodeFunctionData({
+        abi: neethAbi,
+        functionName: 'depositTo',
+        args: [safeAccount.address],
+    })
 })
 
 console.log('Deposit Tx:', depositTx)
