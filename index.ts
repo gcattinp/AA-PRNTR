@@ -8,7 +8,6 @@ import { createPublicClient, http, parseEther, type Hex, erc20Abi, type Address,
 import { arbitrum } from "viem/chains"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { neethAbi } from "./neethAbi"
-import { writeContract } from "permissionless/actions/smartAccount"
 
 const NEETH_ADDRESS = "0x00000000000009B4AB3f1bC2b029bd7513Fbd8ED" as const;
 const API_KEY = process.env.PIMLICO_API_KEY;
@@ -105,18 +104,18 @@ const smartAccountClient = createSmartAccountClient({
  
 				return {
 					...gasEstimates,
-					paymasterAndData: NEETH_ADDRESS, 
+					paymaster: NEETH_ADDRESS, 
 				}
 			} else {
                 const gasEstimates = await pimlicoBundlerClient.estimateUserOperationGas({
-					userOperation: { ...args.userOperation, paymaster: NEETH_ADDRESS },
+					userOperation: { ...args.userOperation, paymaster: '0x' },
 				})
 
                 console.log('Gas Estimates: (ETH)', gasEstimates)
 
 				return {
                     ...gasEstimates,
-                    paymasterAndData: NEETH_ADDRESS
+                    paymaster: '0x'
                 }
 			}
         },
