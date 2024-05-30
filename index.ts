@@ -46,6 +46,9 @@ const walletClient = createWalletClient({
   chain: arbitrum,
 })
 
+const currentNonce = await publicClient.getTransactionCount({
+  address: signer.address,
+})
 
 const factoryContract = getContract({
   address: FACTORY_ADDRESS,
@@ -56,6 +59,42 @@ const factoryContract = getContract({
   }
 })
 
+
+const NEETHContract = getContract({
+  address: NEETH_ADDRESS,
+  abi: neethAbi,
+  client: {
+    public: publicClient,
+    wallet: walletClient,
+  }
+})
+
+const getNEETHBalanceEOA = await NEETHContract.read.balanceOf([signer.address])
+
+console.log('NEETH Balance EOA:', getNEETHBalanceEOA)
+
+const depositNEETH = await NEETHContract.write.deposit(
+  {
+    to: NEETH_ADDRESS,
+    value: parseEther("0.0001"),
+    nonce: currentNonce+1,
+  }
+)
+
+const waitDepositNEETH = await publicClient.waitForTransactionReceipt(
+  {
+    hash: depositNEETH,
+    retryDelay: 15_000
+  }
+)
+
+console.log('Transaction Finished:', waitDepositNEETH)
+
+const newEOABalance = await NEETHContract.read.balanceOf([signer.address])
+console.log('New EOA Balance:', newEOABalance)
+
+const SendNEETHToSCA = newEOABalance - getNEETHBalanceEOA;
+console.log('Send NEETH to SCA:', SendNEETHToSCA)
 
 
 const safeAccount = await signerToSafeSmartAccount(publicClient, {
@@ -68,70 +107,89 @@ const safeAccount = await signerToSafeSmartAccount(publicClient, {
 
 console.log('Safe Account:', safeAccount.address)
 
+const depositTx = await walletClient.sendTransaction({
+  to: safeAccount.address,
+  value: parseEther("0.0001"),
+  nonce: currentNonce+1,
+  data: encodeFunctionData({
+    abi: neethAbi,
+    functionName: 'depositTo',
+    args: [safeAccount.address],
+  })
+})
+
+console.log('Deposit Tx:', depositTx)
 
 
 const smartAccountClient = createSmartAccountClient({
-	account: safeAccount,
-	entryPoint: ENTRYPOINT_ADDRESS_V07,
-	chain: arbitrum,
-	bundlerTransport: http(pimlicoEndpoint),
-	middleware: {
-        gasPrice: async () => (await pimlicoBundlerClient.getUserOperationGasPrice()).fast, // if using pimlico bundler
-		sponsorUserOperation: async (args: { userOperation: UserOperation<"v0.7">, entryPoint: Address }) => {
-            // getRequiredPrefund
-            const requiredPrefund = getRequiredPrefund({
-                userOperation: {
-                    ...args.userOperation,
-                    paymaster: NEETH_ADDRESS
-                },
-                entryPoint: ENTRYPOINT_ADDRESS_V07
-            })
-
-            console.log('Required Prefund:', requiredPrefund)
-
-            // check neeth balance
-            const neethBalance = await publicClient.readContract({
-                address: NEETH_ADDRESS,
-                abi: erc20Abi,
-                functionName: 'balanceOf',
-                args: [safeAccount.address]
-            })
-
-            console.log('NEETH Balance:', neethBalance)
-
-			if (neethBalance > requiredPrefund) {
-				const gasEstimates = await pimlicoBundlerClient.estimateUserOperationGas({
-					userOperation: { ...args.userOperation, paymaster: NEETH_ADDRESS },
-				})
-
-                console.log('Gas Estimates: (NEETH)', gasEstimates)
-
-				return {
-					...gasEstimates,
-					paymaster: NEETH_ADDRESS,
-				}
-			} else {
-                const gasEstimates = await pimlicoBundlerClient.estimateUserOperationGas({
-					userOperation: { ...args.userOperation, paymaster: '0x' },
-				})
-
-                console.log('Gas Estimates: (ETH)', gasEstimates)
-
-				return {
-                    ...gasEstimates,
-                    paymaster: '0x'
-                }
-			}
+  account: safeAccount,
+  entryPoint: ENTRYPOINT_ADDRESS_V07,
+  chain: arbitrum,
+  bundlerTransport: http(pimlicoEndpoint),
+  middleware: {
+    gasPrice: async () => (await pimlicoBundlerClient.getUserOperationGasPrice()).fast, // if using pimlico bundler
+    sponsorUserOperation: async (args: { userOperation: UserOperation<"v0.7">, entryPoint: Address }) => {
+      // getRequiredPrefund
+      const requiredPrefund = getRequiredPrefund({
+        userOperation: {
+          ...args.userOperation,
+          paymaster: NEETH_ADDRESS
         },
-	},
+        entryPoint: ENTRYPOINT_ADDRESS_V07
+      })
+
+      console.log('Required Prefund:', requiredPrefund)
+
+      // check neeth balance
+      const neethBalance = await publicClient.readContract({
+        address: NEETH_ADDRESS,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [safeAccount.address]
+      })
+
+      console.log('NEETH Balance:', neethBalance)
+
+      if (neethBalance > requiredPrefund) {
+        const gasEstimates = await pimlicoBundlerClient.estimateUserOperationGas({
+          userOperation: { ...args.userOperation, paymaster: NEETH_ADDRESS },
+        })
+
+        console.log('Gas Estimates: (NEETH)', gasEstimates)
+
+        return {
+          ...gasEstimates,
+          paymaster: NEETH_ADDRESS,
+        }
+      } else {
+        const gasEstimates = await pimlicoBundlerClient.estimateUserOperationGas({
+          userOperation: { ...args.userOperation, paymaster: '0x' },
+        })
+
+        console.log('Gas Estimates: (ETH)', gasEstimates)
+
+        return {
+          ...gasEstimates,
+          paymaster: '0x'
+        }
+      }
+    },
+  },
 })
+
+const transferNEETHToSafe = await NEETHContract.write.transfer([
+  safeAccount.address,
+  SendNEETHToSCA,
+], {nonce: currentNonce+1})
+
+console.log('Transfer NEETH to Safe:', transferNEETHToSafe)
 
 // Encode the transaction data for creating the token
 // Change args as needed
 const deployTokenData = encodeFunctionData({
   abi: factoryAbi,
   functionName: "createToken",
-  args: ["Test Token", "TST", 100000000000000000000000n]
+  args: ["Test Token", "TEST", 100000000000000000000n]
 });
 
 // Send the transaction through the smartAccountClient
