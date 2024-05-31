@@ -59,44 +59,7 @@ const factoryContract = getContract({
   }
 })
 
-
-const NEETHContract = getContract({
-  address: NEETH_ADDRESS,
-  abi: neethAbi,
-  client: {
-    public: publicClient,
-    wallet: walletClient,
-  }
-})
-
-const getNEETHBalanceEOA = await NEETHContract.read.balanceOf([signer.address])
-
-console.log('NEETH Balance EOA:', getNEETHBalanceEOA)
-
-const depositNEETH = await NEETHContract.write.deposit(
-  {
-    to: NEETH_ADDRESS,
-    value: parseEther("0.0001"),
-    nonce: currentNonce+1,
-  }
-)
-
-const waitDepositNEETH = await publicClient.waitForTransactionReceipt(
-  {
-    hash: depositNEETH,
-    retryDelay: 15_000
-  }
-)
-
-console.log('Transaction Finished:', waitDepositNEETH)
-
-const newEOABalance = await NEETHContract.read.balanceOf([signer.address])
-console.log('New EOA Balance:', newEOABalance)
-
-const SendNEETHToSCA = newEOABalance - getNEETHBalanceEOA;
-console.log('Send NEETH to SCA:', SendNEETHToSCA)
-
-
+// Create a SCA SAFE 1.4.1
 const safeAccount = await signerToSafeSmartAccount(publicClient, {
   entryPoint: ENTRYPOINT_ADDRESS_V07,
   signer: signer,
@@ -110,7 +73,7 @@ console.log('Safe Account:', safeAccount.address)
 const depositTx = await walletClient.sendTransaction({
   to: safeAccount.address,
   value: parseEther("0.0001"),
-  nonce: currentNonce+1,
+  nonce: currentNonce,
   data: encodeFunctionData({
     abi: neethAbi,
     functionName: 'depositTo',
@@ -177,10 +140,49 @@ const smartAccountClient = createSmartAccountClient({
   },
 })
 
+const NEETHContract = getContract({
+  address: NEETH_ADDRESS,
+  abi: neethAbi,
+  client: {
+    public: publicClient,
+    wallet: walletClient,
+  }
+})
+
+const getNEETHBalanceEOA = await NEETHContract.read.balanceOf([signer.address])
+
+console.log('NEETH Balance EOA:', getNEETHBalanceEOA)
+
+// Get some NEETH on your EOA
+const depositNEETH = await NEETHContract.write.deposit(
+  {
+    to: NEETH_ADDRESS,
+    value: parseEther("0.0001"),
+    nonce: currentNonce+1,
+  }
+)
+
+const waitDepositNEETH = await publicClient.waitForTransactionReceipt(
+  {
+    hash: depositNEETH,
+    retryDelay: 15_000
+  }
+)
+
+console.log('Transaction Finished:', waitDepositNEETH)
+
+const newEOABalance = await NEETHContract.read.balanceOf([signer.address])
+console.log('New EOA Balance:', newEOABalance)
+
+// Deposit NEETH to SCA
+const SendNEETHToSCA = newEOABalance - getNEETHBalanceEOA;
+console.log('Send NEETH to SCA:', SendNEETHToSCA)
+
+
 const transferNEETHToSafe = await NEETHContract.write.transfer([
   safeAccount.address,
   SendNEETHToSCA,
-], {nonce: currentNonce+1})
+], {nonce: currentNonce+2})
 
 console.log('Transfer NEETH to Safe:', transferNEETHToSafe)
 
