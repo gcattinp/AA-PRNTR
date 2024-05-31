@@ -157,7 +157,7 @@ console.log('NEETH Balance EOA:', getNEETHBalanceEOA)
 const depositNEETH = await NEETHContract.write.deposit(
   {
     to: NEETH_ADDRESS,
-    value: parseEther("0.0001"),
+    value: parseEther("0.001"),
     nonce: currentNonce+1,
   }
 )
