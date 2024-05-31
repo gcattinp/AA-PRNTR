@@ -19,7 +19,7 @@ For your .env you will also need:
 
 1. Clone the repository
 ```
-git clone git@github.com:NaniDAO/safe-neeth.git
+git clone git@github.com:gcattinp/AA-PRNTR.git
 cd safe-neeth
 ```
 
