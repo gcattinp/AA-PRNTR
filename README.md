@@ -1,4 +1,4 @@
-# Safe-NEETH
+# AA-PRNTR
 
 This typescript project uses [`permissionless`](https://docs.pimlico.io/permissionless) and [viem](https://viem.sh/) libraries to create SAFE Smart Accounts that are compatible with ERC4337 and perform transactions on Arbitrum using NEETH as a paymaster, using Pimilco as the bundler.
 
@@ -20,7 +20,7 @@ For your .env you will also need:
 1. Clone the repository
 ```
 git clone git@github.com:gcattinp/AA-PRNTR.git
-cd safe-neeth
+cd AA-PRNTR
 ```
 
 2. Install Bun packages
