@@ -70,18 +70,18 @@ const safeAccount = await signerToSafeSmartAccount(publicClient, {
 
 console.log('Safe Account:', safeAccount.address)
 
-// const depositTx = await walletClient.sendTransaction({
-//   to: safeAccount.address,
-//   value: parseEther("0.0001"),
-//   nonce: currentNonce,
-//   data: encodeFunctionData({
-//     abi: neethAbi,
-//     functionName: 'depositTo',
-//     args: [safeAccount.address],
-//   })
-// })
+const depositTx = await walletClient.sendTransaction({
+  to: safeAccount.address,
+  value: parseEther("0.0001"),
+  nonce: currentNonce,
+  data: encodeFunctionData({
+    abi: neethAbi,
+    functionName: 'depositTo',
+    args: [safeAccount.address],
+  })
+})
 
-// console.log('Deposit Tx:', depositTx)
+console.log('Deposit Tx:', depositTx)
 
 
 const smartAccountClient = createSmartAccountClient({
@@ -149,49 +149,49 @@ const NEETHContract = getContract({
   }
 })
 
-// const getNEETHBalanceEOA = await NEETHContract.read.balanceOf([signer.address])
+const getNEETHBalanceEOA = await NEETHContract.read.balanceOf([signer.address])
 
-// console.log('NEETH Balance EOA:', getNEETHBalanceEOA)
+console.log('NEETH Balance EOA:', getNEETHBalanceEOA)
 
-// // Get some NEETH on your EOA
-// const depositNEETH = await NEETHContract.write.deposit(
-//   {
-//     to: NEETH_ADDRESS,
-//     value: parseEther("0.001"),
-//     nonce: currentNonce+1,
-//   }
-// )
+// Get some NEETH on your EOA
+const depositNEETH = await NEETHContract.write.deposit(
+  {
+    to: NEETH_ADDRESS,
+    value: parseEther("0.001"),
+    nonce: currentNonce+1,
+  }
+)
 
-// const waitDepositNEETH = await publicClient.waitForTransactionReceipt(
-//   {
-//     hash: depositNEETH,
-//     retryDelay: 15_000
-//   }
-// )
+const waitDepositNEETH = await publicClient.waitForTransactionReceipt(
+  {
+    hash: depositNEETH,
+    retryDelay: 15_000
+  }
+)
 
-// console.log('Transaction Finished:', waitDepositNEETH)
+console.log('Transaction Finished:', waitDepositNEETH)
 
-// const newEOABalance = await NEETHContract.read.balanceOf([signer.address])
-// console.log('New EOA Balance:', newEOABalance)
+const newEOABalance = await NEETHContract.read.balanceOf([signer.address])
+console.log('New EOA Balance:', newEOABalance)
 
-// // Deposit NEETH to SCA
-// const SendNEETHToSCA = newEOABalance - getNEETHBalanceEOA;
-// console.log('Send NEETH to SCA:', SendNEETHToSCA)
+// Deposit NEETH to SCA
+const SendNEETHToSCA = newEOABalance - getNEETHBalanceEOA;
+console.log('Send NEETH to SCA:', SendNEETHToSCA)
 
 
-// const transferNEETHToSafe = await NEETHContract.write.transfer([
-//   safeAccount.address,
-//   SendNEETHToSCA,
-// ], {nonce: currentNonce+2})
+const transferNEETHToSafe = await NEETHContract.write.transfer([
+  safeAccount.address,
+  SendNEETHToSCA,
+], {nonce: currentNonce+2})
 
-// console.log('Transfer NEETH to Safe:', transferNEETHToSafe)
+console.log('Transfer NEETH to Safe:', transferNEETHToSafe)
 
 // Encode the transaction data for creating the token
 // Change args as needed
 const deployTokenData = encodeFunctionData({
   abi: factoryAbi,
   functionName: "createToken",
-  args: ["yea yea", "YUP", 100000000000000000000n]
+  args: ["Test Token", "TEST", 100000000000000000000n]
 });
 
 // Send the transaction through the smartAccountClient
